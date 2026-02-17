@@ -59,11 +59,7 @@ Produce a self-contained research project in `/workspace/extra/autoresearch/`.
    Links to documentation, articles, and repos consulted.
    ```
 
-<<<<<<< HEAD
-7. **Branch, commit, and push** — Create a feature branch, commit, and push:
-=======
 7. **Branch, commit, and push feature branch** — Create a feature branch, commit, and push:
->>>>>>> 3f273a3 (skill: add mini-research for coding research projects)
    ```bash
    cd /workspace/extra/autoresearch
    export GIT_SSH_COMMAND="ssh -i /workspace/extra/allowedSSHKeys/id_rsa -o StrictHostKeyChecking=no"
@@ -75,8 +71,6 @@ Produce a self-contained research project in `/workspace/extra/autoresearch/`.
    After pushing, report the GitHub branch URL to the user:
    `https://github.com/piersharding/autoresearch/tree/feature/<slug>`
 
-<<<<<<< HEAD
-=======
 8. **Ask for confirmation to merge** — Send a message to the user summarizing what was done (topic, key findings, files created, test results) and ask:
    > Research complete on feature/<slug>. Review the branch here:
    > https://github.com/piersharding/autoresearch/tree/feature/<slug>
@@ -95,7 +89,6 @@ Produce a self-contained research project in `/workspace/extra/autoresearch/`.
    ```
    Report that the merge is complete. If the user said "skip" or declined, do nothing further.
 
->>>>>>> 3f273a3 (skill: add mini-research for coding research projects)
 ## Guidelines
 
 - Target the latest stable version of any language/framework unless the user specifies otherwise.
