@@ -11,7 +11,7 @@ const os = require('os');
 
 // Configuration
 const GITLAB_API = 'https://gitlab.com/api/v4';
-const GROUP_ID = '3180705'; // ska-telescope/sdi
+const GROUP_ID = '7480052'; // ska-telescope/sdi
 const STATE_DIR = path.join(os.homedir(), '.gitlab-mr-summary');
 const CONFIG_FILE = path.join(STATE_DIR, 'config.json');
 const STATE_FILE = path.join(STATE_DIR, 'state.json');
@@ -75,36 +75,94 @@ async function saveState(mrCount) {
 }
 
 /**
- * Fetch merge requests for the group since a given date
+ * Fetch all projects in the group (including subgroups), paginated
  */
-async function fetchGroupMRs(token, sinceDate) {
+async function fetchGroupProjects(token) {
+  const projects = [];
+  let page = 1;
+
+  while (true) {
+    const params = new URLSearchParams({
+      include_subgroups: 'true',
+      per_page: '100',
+      page: String(page),
+      order_by: 'name',
+      sort: 'asc',
+    });
+
+    const url = `${GITLAB_API}/groups/${GROUP_ID}/projects?${params}`;
+    const response = await fetch(url, {
+      headers: { 'PRIVATE-TOKEN': token }
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) throw new Error('GitLab authentication failed. Check your token.');
+      if (response.status === 404) throw new Error('GitLab group not found. Check group ID or permissions.');
+      throw new Error(`GitLab API error: ${response.status} ${response.statusText}`);
+    }
+
+    const pageProjects = await response.json();
+    projects.push(...pageProjects);
+
+    const nextPage = response.headers.get('x-next-page');
+    if (!nextPage) break;
+    page++;
+  }
+
+  return projects;
+}
+
+/**
+ * Fetch merged MRs for a single project since a given date
+ */
+async function fetchProjectMRs(token, projectId, sinceDate) {
   const params = new URLSearchParams({
     state: 'merged',
     merged_after: sinceDate.toISOString(),
     order_by: 'merged_at',
     sort: 'desc',
-    per_page: '100'
+    per_page: '100',
   });
 
-  const url = `${GITLAB_API}/groups/${GROUP_ID}/merge_requests?${params}`;
-
+  const url = `${GITLAB_API}/projects/${projectId}/merge_requests?${params}`;
   const response = await fetch(url, {
-    headers: {
-      'PRIVATE-TOKEN': token
-    }
+    headers: { 'PRIVATE-TOKEN': token }
   });
 
   if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error('GitLab authentication failed. Check your token.');
-    }
-    if (response.status === 404) {
-      throw new Error('GitLab group not found. Check group ID or permissions.');
-    }
-    throw new Error(`GitLab API error: ${response.status} ${response.statusText}`);
+    // Non-fatal: skip projects we can't access
+    return [];
   }
 
   return await response.json();
+}
+
+/**
+ * Fetch merge requests for the group since a given date.
+ * Strategy: retrieve projects first, then query MRs per project in parallel.
+ */
+async function fetchGroupMRs(token, sinceDate) {
+  const projects = await fetchGroupProjects(token);
+  console.error(`Found ${projects.length} project(s), fetching MRs...`);
+
+  // Fetch MRs for all projects in parallel batches
+  const CONCURRENCY = 5;
+  const allMRs = [];
+
+  for (let i = 0; i < projects.length; i += CONCURRENCY) {
+    const batch = projects.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(
+      batch.map(p => fetchProjectMRs(token, p.id, sinceDate))
+    );
+    for (const mrs of results) {
+      allMRs.push(...mrs);
+    }
+  }
+
+  // Sort by merged_at descending (newest first)
+  allMRs.sort((a, b) => new Date(b.merged_at) - new Date(a.merged_at));
+
+  return allMRs;
 }
 
 /**
@@ -314,6 +372,8 @@ module.exports = {
   loadToken,
   loadState,
   saveState,
+  fetchGroupProjects,
+  fetchProjectMRs,
   fetchGroupMRs,
   fetchMRApprovals,
   enrichMRsWithApprovals,

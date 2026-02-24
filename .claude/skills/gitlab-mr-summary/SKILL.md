@@ -102,18 +102,18 @@ The skill uses Node.js with native `fetch` (Node 18+), so no additional dependen
 
 ### API Strategy
 
-The skill uses GitLab's **REST API** (not GraphQL) for maximum efficiency:
+The skill uses GitLab's **REST API** with a per-project query strategy to avoid timeouts on large groups:
 
-**Why REST over GraphQL?**
-- ✅ Single endpoint for all group MRs: `GET /groups/:id/merge_requests`
-- ✅ Better performance for list operations
-- ✅ Direct date filtering: `merged_after` parameter
-- ✅ Includes all subprojects automatically
-- ✅ Efficient keyset-based pagination
+**Why per-project instead of group MRs endpoint?**
+- ✅ `/groups/:id/merge_requests` times out on large groups (many subprojects)
+- ✅ Per-project queries are faster and more reliable
+- ✅ Parallel batching (5 projects at a time) keeps total time low
+- ✅ Failures on inaccessible projects are non-fatal (skipped gracefully)
 
 **API calls made**:
-1. **One call** to `/groups/:id/merge_requests` with filters
-2. **One call per MR** to `/projects/:id/merge_requests/:iid/approvals` (only for merged MRs)
+1. **Paginated calls** to `/groups/:id/projects?include_subgroups=true` to get all projects
+2. **One call per project** (batched 5 at a time) to `/projects/:id/merge_requests` with date filter
+3. **One call per MR** to `/projects/:id/merge_requests/:iid/approvals` (only for merged MRs)
 
 ### State Management
 
