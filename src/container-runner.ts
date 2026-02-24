@@ -4,6 +4,7 @@
  */
 import { ChildProcess, exec, spawn } from 'child_process';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 
 import {
@@ -164,6 +165,16 @@ function buildVolumeMounts(
     containerPath: '/app/src',
     readonly: false,
   });
+
+  // GitLab MR summary data directory
+  const gitlabMrSummaryDir = path.join(os.homedir(), '.gitlab-mr-summary');
+  if (fs.existsSync(gitlabMrSummaryDir)) {
+    mounts.push({
+      hostPath: gitlabMrSummaryDir,
+      containerPath: '/home/node/.gitlab-mr-summary',
+      readonly: false,
+    });
+  }
 
   // Additional mounts validated against external allowlist (tamper-proof from containers)
   if (group.containerConfig?.additionalMounts) {
