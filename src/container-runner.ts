@@ -166,6 +166,16 @@ function buildVolumeMounts(
     readonly: false,
   });
 
+  // SSH keys (read-only) for git operations inside the container
+  const sshDir = path.join(os.homedir(), '.ssh');
+  if (fs.existsSync(sshDir)) {
+    mounts.push({
+      hostPath: sshDir,
+      containerPath: '/home/node/.ssh',
+      readonly: true,
+    });
+  }
+
   // GitLab MR summary data directory
   const gitlabMrSummaryDir = path.join(os.homedir(), '.gitlab-mr-summary');
   if (fs.existsSync(gitlabMrSummaryDir)) {
