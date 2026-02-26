@@ -187,16 +187,6 @@ function buildVolumeMounts(
     readonly: false,
   });
 
-  // SSH keys (read-only) for git operations inside the container
-  const sshDir = path.join(os.homedir(), '.ssh');
-  if (fs.existsSync(sshDir)) {
-    mounts.push({
-      hostPath: sshDir,
-      containerPath: '/home/node/.ssh',
-      readonly: true,
-    });
-  }
-
   // GitLab MR summary data directory
   const gitlabMrSummaryDir = path.join(os.homedir(), '.gitlab-mr-summary');
   if (fs.existsSync(gitlabMrSummaryDir)) {
@@ -236,6 +226,9 @@ function buildContainerArgs(
 
   // Pass host timezone so container's local time matches the user's
   args.push('-e', `TZ=${TIMEZONE}`);
+
+  // Use specific SSH key for git operations
+  args.push('-e', 'GIT_SSH_COMMAND=ssh -i /workspace/extra/allowedSSHKeys/id_rsa -o StrictHostKeyChecking=no')
 
   // Run as host user so bind-mounted files are accessible.
   // Skip when running as root (uid 0), as the container's node user (uid 1000),
