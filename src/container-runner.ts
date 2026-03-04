@@ -244,7 +244,10 @@ function buildContainerArgs(
   args.push('-e', `TZ=${TIMEZONE}`);
 
   // Use specific SSH key for git operations
-  args.push('-e', 'GIT_SSH_COMMAND=ssh -i /workspace/extra/allowedSSHKeys/id_rsa -o StrictHostKeyChecking=no')
+  args.push(
+    '-e',
+    'GIT_SSH_COMMAND=ssh -i /workspace/extra/allowedSSHKeys/id_rsa -o StrictHostKeyChecking=no',
+  );
 
   // Run as host user so bind-mounted files are accessible.
   // Skip when running as root (uid 0), as the container's node user (uid 1000),
