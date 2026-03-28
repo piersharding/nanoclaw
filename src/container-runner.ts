@@ -80,7 +80,7 @@ function buildVolumeMounts(
     });
 
     // Shadow .env so the agent cannot read secrets from the mounted project root.
-    // Credentials are injected by the OneCLI gateway, never exposed to containers.
+    // Credentials are injected by the credential proxy, never exposed to containers.
     const envFile = path.join(projectRoot, '.env');
     if (fs.existsSync(envFile)) {
       mounts.push({
@@ -305,15 +305,10 @@ export async function runContainerAgent(
   const mounts = buildVolumeMounts(group, input.isMain);
   const safeName = group.folder.replace(/[^a-zA-Z0-9-]/g, '-');
   const containerName = `nanoclaw-${safeName}-${Date.now()}`;
-  // Main group uses the default OneCLI agent; others use their own agent.
   const agentIdentifier = input.isMain
     ? undefined
     : group.folder.toLowerCase().replace(/_/g, '-');
-  const containerArgs = await buildContainerArgs(
-    mounts,
-    containerName,
-    agentIdentifier,
-  );
+  const containerArgs = await buildContainerArgs(mounts, containerName, agentIdentifier);
 
   logger.debug(
     {
