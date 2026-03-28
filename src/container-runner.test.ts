@@ -11,10 +11,11 @@ vi.mock('./config.js', () => ({
   CONTAINER_IMAGE: 'nanoclaw-agent:latest',
   CONTAINER_MAX_OUTPUT_SIZE: 10485760,
   CONTAINER_TIMEOUT: 1800000, // 30min
-  CREDENTIAL_PROXY_PORT: 3001,
   DATA_DIR: '/tmp/nanoclaw-test-data',
   GROUPS_DIR: '/tmp/nanoclaw-test-groups',
   IDLE_TIMEOUT: 1800000, // 30min
+  OLLAMA_ADMIN_TOOLS: false,
+  ONECLI_URL: 'http://localhost:10254',
   TIMEZONE: 'America/Los_Angeles',
 }));
 
@@ -60,10 +61,13 @@ vi.mock('./container-runtime.js', () => ({
   stopContainer: vi.fn(),
 }));
 
-// Mock credential-proxy
-vi.mock('./credential-proxy.js', () => ({
-  detectAuthMode: vi.fn(() => 'api-key'),
-}));
+// Mock @onecli-sh/sdk
+vi.mock('@onecli-sh/sdk', () => {
+  class OneCLI {
+    applyContainerConfig = vi.fn(() => Promise.resolve(true));
+  }
+  return { OneCLI };
+});
 
 // Create a controllable fake ChildProcess
 function createFakeProcess() {
