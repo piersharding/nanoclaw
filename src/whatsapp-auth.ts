@@ -40,7 +40,6 @@ _generics.getPlatformId = (browser: string): string => {
   return platformType ? platformType.toString() : '1';
 };
 
-
 const AUTH_DIR = './store/auth';
 const QR_FILE = './store/qr-data.txt';
 const STATUS_FILE = './store/auth-status.txt';
