@@ -238,13 +238,12 @@ export class WhatsAppChannel implements Channel {
 
     this.sock.ev.on('creds.update', saveCreds);
 
-    this.sock.ev.on('chats.phoneNumberShare', ({ lid, jid }) => {
+    (this.sock.ev as any).on('chats.phoneNumberShare', ({ lid, jid }: { lid?: string; jid?: string }) => {
       const lidUser = lid?.split('@')[0].split(':')[0];
       if (lidUser && jid) {
         this.setLidPhoneMapping(lidUser, jid);
       }
     });
-
 
     this.sock.ev.on('messages.upsert', async ({ messages }) => {
       for (const msg of messages) {
@@ -308,7 +307,6 @@ export class WhatsAppChannel implements Channel {
                 `@${ASSISTANT_NAME}`,
               );
             }
-
 
             // Skip protocol messages with no text content (encryption keys, read receipts, etc.)
             if (!content) continue;
@@ -534,7 +532,6 @@ export class WhatsAppChannel implements Channel {
     });
     return normalized;
   }
-
 
   private async flushOutgoingQueue(): Promise<void> {
     if (this.flushing || this.outgoingQueue.length === 0) return;
